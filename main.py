@@ -83,7 +83,8 @@ async def websocket_endpoint(websocket: WebSocket, room: str):
     await manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            data = await websocket.receive_text()
+            await manager.broadcast({"room": room, "author": "가족", "content": data})
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
