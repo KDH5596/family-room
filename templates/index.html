@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>우리 가족 디스코드</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #313338; /* 디스코드 다크모드 배경색 */
+            color: #dbdee1;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 왼쪽 서버/채널 사이드바 영역 */
+        .sidebar {
+            width: 260px;
+            background-color: #2b2d31;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #1f2023;
+        }
+
+        .server-header {
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #ffffff;
+            border-bottom: 1px solid #1f2023;
+            background-color: #232428;
+        }
+
+        .channel-list {
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex-grow: 1;
+        }
+
+        .channel-category {
+            font-size: 0.75em;
+            font-weight: bold;
+            color: #949ba4;
+            margin-bottom: 5px;
+            padding-left: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .channel-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #949ba4;
+            font-weight: 500;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .channel-item:hover {
+            background-color: #35373c;
+            color: #dbdee1;
+        }
+
+        .channel-item.active {
+            background-color: #404249;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        /* 오른쪽 메인 채팅 영역 */
+        .main-chat-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #313338;
+        }
+
+        .chat-top-header {
+            padding: 20px;
+            background-color: #313338;
+            border-bottom: 1px solid #1f2023;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-mini-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75em;
+            font-weight: normal;
+        }
+
+        .user-mini-info img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .logout-btn-sm {
+            color: #f23f43;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* 메시지들이 쌓이는 공간 */
+        .messages-container {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .discord-message {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .discord-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: 2px;
+        }
+
+        .message-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .message-header-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-username {
+            font-weight: bold;
+            color: #ffffff;
+            font-size: 0.95em;
+        }
+
+        .message-badge {
+            background-color: #5865f2; /* 디스코드 블루 */
+            color: white;
+            font-size: 0.7em;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .message-body {
+            color: #dbdee1;
+            font-size: 0.95em;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .message-title {
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        /* 하단 메시지 입력창 */
+        .chat-input-area {
+            padding: 20px;
+            background-color: #313338;
+        }
+
+        .chat-form {
+            background-color: #383a40;
+            border-radius: 8px;
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .form-row-sm {
+            display: flex;
+            gap: 10px;
+        }
+
+        .discord-input, .discord-textarea {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            outline: none;
+            width: 100%;
+        }
+
+        .discord-input::placeholder, .discord-textarea::placeholder {
+            color: #87898c;
+        }
+
+        .discord-select {
+            background-color: #2b2d31;
+            color: #dbdee1;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .send-btn {
+            background-color: #5865f2;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-end;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background-color: #4752c4;
+        }
+
+        .login-prompt {
+            padding: 20px;
+            text-align: center;
+            background-color: #2b2d31;
+            border-radius: 8px;
+            margin: auto;
+        }
+
+        .discord-login-btn {
+            background-color: #5865f2;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 왼쪽 사이드바 (디스코드 채널 목록 스타일) -->
+    <div class="sidebar">
+        <div class="server-header">
+            💬 우리가족 서버
+        </div>
+        <div class="channel-list">
+            <div class="channel-category">텍스트 채널</div>
+            <a href="/?room=우리 가족" class="channel-item {% if current_room == '우리 가족' %}active{% endif %}">
+                # 🏠-우리-가족
+            </a>
+            <a href="/?room=외가댁" class="channel-item {% if current_room == '외가댁' %}active{% endif %}">
+                # 👵-외가댁
+            </a>
+            <a href="/?room=친가댁" class="channel-item {% if current_room == '친가댁' %}active{% endif %}">
+                # 👴-친가댁
+            </a>
+        </div>
+    </div>
+
+    <!-- 오른쪽 메인 채팅 화면 -->
+    <div class="main-chat-area">
+        
+        <!-- 상단 채널 이름 및 유저 정보 -->
+        <div class="chat-top-header">
+            <div># {{ current_room }}</div>
+            
+            {% if user %}
+                <div class="user-mini-info">
+                    <img src="{{ user.picture }}" alt="프로필">
+                    <span><b>{{ user.name }}</b>님</span>
+                    <a href="/logout" class="logout-btn-sm">[로그아웃]</a>
+                </div>
+            {% else %}
+                <div style="font-size: 0.7em;">
+                    <a href="/login" style="color: #5865f2; text-decoration: none; font-weight: bold;">로그인하기</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 메시지(글)가 쌓이는 공간 -->
+        <div class="messages-container">
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="discord-message">
+                        <img src="{{ post.picture }}" alt="" class="discord-avatar">
+                        <div class="message-content-wrapper">
+                            <div class="message-header-info">
+                                <span class="message-username">{{ post.name }}</span>
+                                <span class="message-badge">{{ post.category }}</span>
+                            </div>
+                            <div class="message-title">{{ post.title }}</div>
+                            <div class="message-body">{{ post.content }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; color: #87898c; margin-top: 50px;">
+                    이 채널에는 아직 메시지가 없어요. 첫 번째 이야기를 남겨보세요! ✨
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 하단 메시지 입력 폼 -->
+        <div class="chat-input-area">
+            {% if user %}
+                <form action="/add_post" method="POST" class="chat-form">
+                    <input type="hidden" name="room" value="{{ current_room }}">
+                    
+                    <div class="form-row-sm">
+                        <select name="category" class="discord-select">
+                            <option value="공지">📢 공지</option>
+                            <option value="일상" selected>😊 일상</option>
+                            <option value="요청">🛒 요청</option>
+                            <option value="추억">📷 추억</option>
+                        </select>
+                        <input type="text" name="title" placeholder="제목을 입력하세요..." class="discord-input" required>
+                    </div>
+                    
+                    <textarea name="content" placeholder="#{{ current_room }} 채널에 메시지 보내기..." class="discord-textarea" rows="2" required></textarea>
+                    
+                    <button type="submit" class="send-btn">전송</button>
+                </form>
+            {% else %}
+                <div class="login-prompt">
+                    <p style="margin: 0; color: #dbdee1; font-size: 0.9em;">메시지를 보내려면 로그인이 필요합니다.</p>
+                    <a href="/login" class="discord-login-btn">Google 로그인</a>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>
