@@ -77,14 +77,13 @@ async def home(request: Request, room: str = "우리 가족", db: Session = Depe
         {"user": user, "posts": room_posts, "current_room": room}
     )
 
-# 2. 웹소켓 엔드포인트
+# 2. 웹소켓 엔드포인트 (안전 모드)
 @app.websocket("/ws/{room}")
 async def websocket_endpoint(websocket: WebSocket, room: str):
     await manager.connect(websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            await manager.broadcast({"room": room, "author": "가족", "content": data})
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
