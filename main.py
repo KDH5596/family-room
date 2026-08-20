@@ -1,10 +1,9 @@
-from fastapi import FastAPI, Request, Form, Depends, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import Session
-from typing import List
 import os
 
 from database import SessionLocal, engine, get_db
@@ -15,25 +14,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# 실시간 웹소켓 관리를 위한 클래스
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        for connection in self.active_connections:
-            await connection.send_json(message)
-
-manager = ConnectionManager()
-
-# 렌더(프록시) 환경 설정
+# 렌더(프록시) 환경에서 https 주소를 정확히 인식하도록 설정
 @app.middleware("http")
 async def proxy_fix_middleware(request: Request, call_next):
     forwarded_proto = request.headers.get("x-forwarded-proto")
@@ -42,6 +23,7 @@ async def proxy_fix_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
+# 세션 미들웨어 설정
 app.add_middleware(SessionMiddleware, secret_key="your-super-secret-key-dongdong")
 
 templates = Jinja2Templates(directory="templates")
@@ -62,7 +44,7 @@ ALLOWED_EMAILS = [
     "raykim00@gmail.com",
 ]
 
-# 1. 메인 페이지
+# 1. 메인 페이지 (DB에서 글 불러오기)
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, room: str = "우리 가족", db: Session = Depends(get_db)):
     user = request.session.get("user")
@@ -77,17 +59,7 @@ async def home(request: Request, room: str = "우리 가족", db: Session = Depe
         {"user": user, "posts": room_posts, "current_room": room}
     )
 
-# 2. 웹소켓 엔드포인트 (안전 모드)
-@app.websocket("/ws/{room}")
-async def websocket_endpoint(websocket: WebSocket, room: str):
-    await manager.connect(websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-
-# 3. 로그인/인증 (기존 동일)
+# 2. 로그인 및 인증
 @app.get("/login")
 async def login(request: Request):
     redirect_uri = "https://family-room.onrender.com/auth"
@@ -116,7 +88,7 @@ async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/", status_code=303)
 
-# 4. 게시글 작성
+# 3. 게시글 작성 (DB에 저장)
 @app.post("/add_post")
 async def create_post(
     request: Request,
@@ -141,8 +113,5 @@ async def create_post(
     )
     db.add(new_post)
     db.commit()
-    
-    # DB 저장 후 모든 연결된 클라이언트에게 실시간 알림 보낼 준비 완료
-    await manager.broadcast({"room": room, "author": user["name"], "content": content})
     
     return RedirectResponse(url=f"/?room={room}", status_code=303)
