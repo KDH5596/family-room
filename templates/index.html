@@ -350,6 +350,42 @@
         </div>
 
     </div>
-
+<script>
+    const chatForm = document.querySelector('.chat-form');
+    
+    if (chatForm) {
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // 페이지 새로고침 막기!
+            
+            const formData = new FormData(chatForm);
+            
+            const response = await fetch('/add_post', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // 채팅창 영역에 새 글 HTML 조각 바로 추가하기
+                const chatArea = document.querySelector('.main-chat-area');
+                const newDiv = document.createElement('div');
+                newDiv.style.margin = "10px 0";
+                newDiv.style.padding = "10px";
+                newDiv.style.background = "#2f3136";
+                newDiv.style.borderRadius = "8px";
+                
+                newDiv.innerHTML = `
+                    <b>${data.author}</b> <span style="font-size: 0.8em; color: gray;">[방금 전]</span>
+                    <p style="margin: 5px 0 0 0;">${data.content}</p>
+                `;
+                
+                chatArea.appendChild(newDiv);
+                chatForm.reset(); // 입력창 비우기
+                chatArea.scrollTop = chatArea.scrollHeight; // 스크롤 하단으로
+            }
+        });
+    }
+</script>
 </body>
 </html>

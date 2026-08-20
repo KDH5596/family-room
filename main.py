@@ -1,3 +1,4 @@
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -100,7 +101,7 @@ async def create_post(
 ):
     user = request.session.get("user")
     if not user:
-        return RedirectResponse(url="/", status_code=303)
+        return JSONResponse({"error": "로그인 필요"}, status_code=403)
         
     new_post = models.Post(
         author=user["name"],
@@ -113,5 +114,11 @@ async def create_post(
     )
     db.add(new_post)
     db.commit()
+    db.refresh(new_post)
     
-    return RedirectResponse(url=f"/?room={room}", status_code=303)
+    return JSONResponse({
+        "author": new_post.author,
+        "content": new_post.content,
+        "category": new_post.category,
+        "title": new_post.title
+    })
