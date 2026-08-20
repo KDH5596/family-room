@@ -2,14 +2,22 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from authlib.integrations.starlette_client import OAuth
 import os
 
-# HTTP 환경 테스트 설정
-os.environ["AUTHLIB_INSECURE_TRANSPORT"] = "1"
-
 app = FastAPI()
 
+# 렌더(프록시) 환경에서 https 주소를 정확히 인식하도록 설정
+@app.middleware("http")
+async def proxy_fix_middleware(request: Request, call_next):
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    if forwarded_proto:
+        request.scope["scheme"] = forwarded_proto
+    response = await call_next(request)
+    return response
+
+# 세션 미들웨어 설정
 app.add_middleware(SessionMiddleware, secret_key="your-super-secret-key-dongdong")
 
 templates = Jinja2Templates(directory="templates")
