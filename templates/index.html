@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html   lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>우리 가족 디스코드</title>
@@ -351,5 +351,42 @@
 
     </div>
 
+    </form>
+    {% else %}
+    <div class="login-prompt">
+        <p style="margin: 0; color: #dbdee1; font-size: 0.9em;">메시지를 보내려면 로그인이 필요합니다.</p>
+        <a href="/login" class="discord-login-btn">Google 로그인</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 💡 여기에 웹소켓 자바스크립트 추가! -->
+<script>
+    const currentRoom = "{{ current_room }}";
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const ws = new WebSocket(protocol + window.location.host + `/ws/${currentRoom}`);
+
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.room === currentRoom) {
+            const chatArea = document.querySelector('.main-chat-area');
+            const newMessageDiv = document.createElement('div');
+            newMessageDiv.style.margin = "10px 0";
+            newMessageDiv.style.padding = "10px";
+            newMessageDiv.style.background = "#2f3136";
+            newMessageDiv.style.borderRadius = "8px";
+            
+            newMessageDiv.innerHTML = `
+                <b>${data.author}</b> <span style="font-size: 0.8em; color: gray;">[실시간 방금 전]</span>
+                <p style="margin: 5px 0 0 0;">${data.content}</p>
+            `;
+            chatArea.appendChild(newMessageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    };
+</script>
+
+</body>
+</html>
 </body>
 </html>
